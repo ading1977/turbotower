@@ -1,5 +1,5 @@
 GITCOMMIT=$(shell git rev-parse HEAD)
-BUILDTIME=$(shell date)
+BUILDTIME=$(shell date -R)
 
 REMOTE=github.com
 USER=turbonomic
@@ -9,8 +9,8 @@ BINARY=turbotower
 OUTPUT_DIR=build
 
 build: clean
-	go build -x -ldflags "-X '${PROJECTPATH}/version.GitCommit=${GITCOMMIT}' -X '${PROJECTPATH}/version.BuildTime=${BUILDTIME}'" -o ${OUTPUT_DIR}/${BINARY} 
+	go build -ldflags "-X '${PROJECTPATH}/version.GitCommit=${GITCOMMIT}' -X '${PROJECTPATH}/version.BuildTime=${BUILDTIME}'" -o ${OUTPUT_DIR}/${BINARY} 
 
 .PHONY: clean
 clean:
-	rm -rf ${OUTPUT_DIR}
+	@rm -rf ${OUTPUT_DIR}
