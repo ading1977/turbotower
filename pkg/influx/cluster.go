@@ -5,16 +5,12 @@ import (
 	"github.com/urfave/cli"
 )
 
-func GetCluster(c *cli.Context) error {
+func GetVMCluster(c *cli.Context) error {
 	db, err := newDBInstance(c)
 	if err != nil {
 		return err
 	}
 	defer db.close()
-	//	results, err := db.query(newDBQuery(c).
-	//		withColumns("APPLICATION_USED", "display_name").
-	//		withName("commodity_bought").
-	//		withConditions("entity_type='VIRTUAL_APPLICATION'", "AND time>now()-10m"))
 	row, err := db.query(newDBQuery(c).
 		withQueryType("schema").
 		withColumns("COMPUTE_CLUSTER").

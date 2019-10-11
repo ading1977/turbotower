@@ -13,10 +13,28 @@ var (
 			Usage: "Display one or many entities or groups of entities",
 			Subcommands: []cli.Command{
 				{
+					Name: "application",
+					ShortName: "a",
+					Usage: "Display one or many application",
+					Action: influx.GetApplication,
+				},
+				{
 					Name: "cluster",
-					ShortName: "c",
+					ShortName: "cl",
 					Usage: "Display one or many clusters",
-					Action: influx.GetCluster,
+					Action: influx.GetVMCluster,
+				},
+				{
+					Name: "container",
+					ShortName: "cnt",
+					Usage: "Display one or many containers",
+					Action: influx.GetContainer,
+				},
+				{
+					Name: "containerpod",
+					ShortName: "pod",
+					Usage: "Display one or many container pods",
+					Action: influx.GetContainerPod,
 				},
 				{
 					Name: "service",
@@ -24,6 +42,7 @@ var (
 					Usage: "Display one or many services",
 					Action: influx.GetService,
 				},
+
 			},
 		},
 	}
