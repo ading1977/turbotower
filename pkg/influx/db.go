@@ -30,6 +30,7 @@ func newDBQuery(c *cli.Context) (*DBQuery) {
 		columns:   []string{},
 		database:  c.GlobalString("database"),
 		queryType: "data",
+		desc:      true,
 	}
 }
 
