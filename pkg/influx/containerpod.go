@@ -2,8 +2,8 @@ package influx
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/turbonomic/turbotower/pkg/topology"
 	"github.com/turbonomic/turbotower/utils"
 	"github.com/urfave/cli"
@@ -72,4 +72,3 @@ func GetContainerPod(c *cli.Context) error {
 	}
 	return nil
 }
-
