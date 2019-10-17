@@ -1,11 +1,7 @@
 package utils
 
-import (
-	log "github.com/sirupsen/logrus"
-	"github.com/turbonomic/turbotower/pkg/topology"
-)
-
-func GetAvgBoughtUsed(commBoughtMap map[string][]*topology.CommodityBought) map[string]float64 {
+/*
+func GetAvgBoughtUsed(commBoughtMap map[int64][]*topology.CommodityBought) map[string]float64 {
 	avgUsed := make(map[string]float64)
 	l := len(commBoughtMap)
 	for _, commBoughtList := range commBoughtMap {
@@ -36,7 +32,7 @@ func GetSoldUsedUtil(commSoldList []*topology.CommoditySold) map[string]float64 
 	}
 	return soldUsedUtil
 }
-
+*/
 func Truncate(s string, max_len int) string {
 	l := len(s)
 	if l < max_len {

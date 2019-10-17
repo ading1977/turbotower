@@ -31,6 +31,7 @@ func newDBQuery(c *cli.Context) (*DBQuery) {
 		database:  c.GlobalString("database"),
 		queryType: "data",
 		desc:      true,
+		conditions: []string{"time>now()-10m"},
 	}
 }
 
@@ -81,7 +82,7 @@ func (q *DBQuery) build() string {
 		query = "SELECT " + strings.Join(q.columns, ",")
 		query += " FROM " + q.name
 		if len(q.conditions) > 0 {
-			query += " WHERE " + strings.Join(q.conditions, " ")
+			query += " WHERE " + strings.Join(q.conditions, " AND ")
 		}
 		if len(q.groupByTags) > 0 {
 			query += " GROUP BY " + strings.Join(q.groupByTags, ",")
@@ -120,7 +121,7 @@ func (db *DBInstance) close() {
 func (db *DBInstance) query(dbQuery *DBQuery) (*models.Row, error) {
 	queryString := dbQuery.build()
 	if log.GetLevel() >= log.DebugLevel {
-		log.Infof("DB query string %s", queryString)
+		log.Debugf("DB query string %s", queryString)
 	}
 	q := client.NewQuery(
 		queryString,
