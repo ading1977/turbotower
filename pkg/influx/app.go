@@ -29,35 +29,42 @@ func GetApplication(c *cli.Context) error {
 	tp.PrintEntityTypeIndex()
 	containerEntities := tp.EntityTypeIndex[int32(proto.EntityDTO_CONTAINER)]
 	topology.NewSupplyChainResolver().GetSupplyChainNodes(containerEntities)
-	tp.PrintGraph()
 	return err
 }
 
 func processCommoditySold(c *cli.Context, db *DBInstance, tp *topology.Topology) error {
-	columns := append(commoditySoldFieldKeys,
-		"oid", "entity_type", "display_name")
+	commoditySoldTagKeys := []string{"oid", "entity_type", "display_name", "VM_CLUSTER", "HOST_CLUSTER"}
+	columns := append(commoditySoldFieldKeys, commoditySoldTagKeys...)
 	row, err := db.query(newDBQuery(c).
 		withColumns(columns...).
 		withName("commodity_sold"))
 	if err != nil {
 		return err
 	}
-	index := len(columns)
+	index := len(columns) - len(commoditySoldTagKeys) + 1
 	for _, value := range row.Values {
 		// Parse OID
-		oid, err := strconv.ParseInt(value[index-2].(string), 10, 64)
+		oid, err := strconv.ParseInt(value[index].(string), 10, 64)
 		if err != nil {
-			return fmt.Errorf("failed to parse OID %v", value[index-2])
+			return fmt.Errorf("failed to parse OID %v", value[index])
 		}
 		// Parse entity type
-		entityType, found := proto.EntityDTO_EntityType_value[value[index-1].(string)]
+		entityType, found := proto.EntityDTO_EntityType_value[value[index+1].(string)]
 		if !found {
-			return fmt.Errorf("failed to parse entity type %v", value[index-1])
+			return fmt.Errorf("failed to parse entity type %v", value[index+1])
 		}
 		// Parse display name
-		displayName := value[index].(string)
+		displayName := value[index+2].(string)
+		// Parse group names
+		var groupNames []string
+		for i := index+3; i < len(columns); i++ {
+			valObj := value[i]
+			if valObj != nil && valObj.(string) != "" {
+				groupNames = append(groupNames, valObj.(string))
+			}
+		}
 		// Get or create the entity
-		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType)
+		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType, groupNames...)
 		// Parse commodity values
 		for i, key := range commoditySoldFieldKeys {
 			valObj := value[i+1]
@@ -81,35 +88,43 @@ func processCommoditySold(c *cli.Context, db *DBInstance, tp *topology.Topology)
 }
 
 func processCommodityBought(c *cli.Context, db *DBInstance, tp *topology.Topology) error {
-	columns := append(commodityBoughtFieldKeys,
-		"oid", "provider_id", "entity_type", "display_name")
+	commodityBoughtTagKeys := []string{"oid", "provider_id", "entity_type", "display_name", "VM_CLUSTER", "HOST_CLUSTER"}
+	columns := append(commodityBoughtFieldKeys, commodityBoughtTagKeys...)
 	row, err := db.query(newDBQuery(c).
 		withColumns(columns...).
 		withName("commodity_bought"))
 	if err != nil {
 		return err
 	}
-	index := len(columns)
+	index := len(columns) - len(commodityBoughtTagKeys) + 1
 	for _, value := range row.Values {
 		// Parse OID
-		oid, err := strconv.ParseInt(value[index-3].(string), 10, 64)
+		oid, err := strconv.ParseInt(value[index].(string), 10, 64)
 		if err != nil {
-			return fmt.Errorf("failed to parse OID %v", value[index-3])
+			return fmt.Errorf("failed to parse OID %v", value[index])
 		}
 		// Parse provider ID
-		providerId, err := strconv.ParseInt(value[index-2].(string), 10, 64)
+		providerId, err := strconv.ParseInt(value[index+1].(string), 10, 64)
 		if err != nil {
-			return fmt.Errorf("failed to parse provider ID %v", value[index-2])
+			return fmt.Errorf("failed to parse provider ID %v", value[index+1])
 		}
 		// Parse entity type
-		entityType, found := proto.EntityDTO_EntityType_value[value[index-1].(string)]
+		entityType, found := proto.EntityDTO_EntityType_value[value[index+2].(string)]
 		if !found {
-			return fmt.Errorf("failed to parse entity type %v", value[index-1])
+			return fmt.Errorf("failed to parse entity type %v", value[index+2])
 		}
 		// Parse display name
-		displayName := value[index].(string)
+		displayName := value[index+3].(string)
+		// Parse group names
+		var groupNames []string
+		for i := index+4; i < len(columns); i++ {
+			valObj := value[i]
+			if valObj != nil && valObj.(string) != "" {
+				groupNames = append(groupNames, valObj.(string))
+			}
+		}
 		// Get or create the entity
-		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType)
+		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType, groupNames...)
 		// Parse commodity values
 		for i, key := range commodityBoughtFieldKeys {
 			valObj := value[i+1]

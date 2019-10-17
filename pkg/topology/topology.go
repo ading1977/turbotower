@@ -1,6 +1,7 @@
 package topology
 
 import (
+	set "github.com/deckarep/golang-set"
 	log "github.com/sirupsen/logrus"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
@@ -18,6 +19,7 @@ type Entity struct {
 	CommodityBought map[int64][]*Commodity
 	Providers       []*Entity
 	Consumers       []*Entity
+	Groups          set.Set
 }
 
 func NewCommodity(name string, value float64) *Commodity {
@@ -30,6 +32,7 @@ func NewEntity(name string, oid int64, entityType int32) *Entity {
 		OID:             oid,
 		EntityType:      entityType,
 		CommodityBought: make(map[int64][]*Commodity),
+		Groups:          set.NewSet(),
 	}
 }
 
@@ -60,6 +63,7 @@ func (e *Entity) CreateCommodityBoughtIfAbsent(name string, value float64, provi
 func (e *Entity) PrintEntity() {
 	entityType, _ := proto.EntityDTO_EntityType_name[e.EntityType]
 	log.Infof("OID: %d Type: %s Name: %s", e.OID, entityType, e.Name)
+	log.Infof("Belongs to %v", e.Groups)
 	log.Infof("Commodity bought:")
 	for providerId, commBoughtList := range e.CommodityBought {
 		log.Printf("    Provider: %d", providerId)
@@ -105,29 +109,16 @@ func NewTopology() *Topology {
 	}
 }
 
-func (t *Topology) CreateEntityIfAbsent(name string, oid int64, entityType int32) *Entity {
+func (t *Topology) CreateEntityIfAbsent(name string, oid int64, entityType int32, groups ...string) *Entity {
 	e, found := t.Entities[oid]
-	if found {
-		return e
+	if !found {
+		e = NewEntity(name, oid, entityType)
+		t.Entities[oid] = e
 	}
-	e = NewEntity(name, oid, entityType)
-	t.Entities[oid] = e
+	for _, group := range groups {
+		e.Groups.Add(group)
+	}
 	return e
-}
-
-func (t *Topology) GetEntity(oid int64) *Entity {
-	e, found := t.Entities[oid]
-	if found {
-		return e
-	}
-	return nil
-}
-
-func (t *Topology) AddEntity(e *Entity) {
-	if _, found := t.Entities[e.OID]; found {
-		return
-	}
-	t.Entities[e.OID] = e
 }
 
 func (t *Topology) PrintEntities() {
