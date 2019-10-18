@@ -47,7 +47,7 @@ func listAll(scope string, tp *topology.Topology) {
 				"Name", "VCPU", "VMEM", "QPS", "LATENCY")
 			for entity := range node.Members.Iterator().C {
 				app := entity.(*topology.Entity)
-				avgValue := utils.GetAvgBoughtValues(app.CommodityBought)
+				avgValue := app.AvgCommBoughtValue
 				avgVCPU, _ := avgValue["VCPU_USED"]
 				avgVMem, _ := avgValue["VMEM_USED"]
 				fmt.Printf(format_list_all_content,

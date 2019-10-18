@@ -12,14 +12,15 @@ type Commodity struct {
 }
 
 type Entity struct {
-	Name            string
-	EntityType      int32
-	OID             int64
-	CommoditySold   []*Commodity
-	CommodityBought map[int64][]*Commodity
-	Providers       []*Entity
-	Consumers       []*Entity
-	Groups          set.Set
+	Name               string
+	EntityType         int32
+	OID                int64
+	CommoditySold      map[string]*Commodity
+	CommodityBought    map[int64]map[string]*Commodity
+	AvgCommBoughtValue map[string]float64
+	Providers          []*Entity
+	Consumers          []*Entity
+	Groups             set.Set
 }
 
 type Topology struct {
@@ -33,36 +34,34 @@ func newCommodity(name string, value float64) *Commodity {
 
 func newEntity(name string, oid int64, entityType int32) *Entity {
 	return &Entity{
-		Name:            name,
-		OID:             oid,
-		EntityType:      entityType,
-		CommodityBought: make(map[int64][]*Commodity),
-		Groups:          set.NewSet(),
+		Name:               name,
+		OID:                oid,
+		EntityType:         entityType,
+		CommoditySold:      make(map[string]*Commodity),
+		CommodityBought:    make(map[int64]map[string]*Commodity),
+		AvgCommBoughtValue: make(map[string]float64),
+		Groups:             set.NewSet(),
 	}
 }
 
 func (e *Entity) createCommoditySoldIfAbsent(name string, value float64) {
-	for _, commSold := range e.CommoditySold {
-		if commSold.Name == name {
-			// There is already a commodity with the same name
-			return
-		}
+	if _, found := e.CommoditySold[name]; !found {
+		e.CommoditySold[name] = newCommodity(name, value)
 	}
-	e.CommoditySold = append(e.CommoditySold, newCommodity(name, value))
 }
 
 func (e *Entity) createCommodityBoughtIfAbsent(name string, value float64, providerId int64) {
-	if commBoughtList, found := e.CommodityBought[providerId]; found {
-		for _, commBought := range commBoughtList {
-			if commBought.Name == name {
-				// There is already a commodity with the same name from the same provider
-				return
-			}
+	if commBought, found := e.CommodityBought[providerId]; found {
+		if _, found := commBought[name]; !found {
+			// There is no such commodity from this provider, add it to the map
+			commBought[name] = newCommodity(name, value)
 		}
+		return
 	}
-	// There is no such provider or there is no such commodity from this provider
-	e.CommodityBought[providerId] = append(e.CommodityBought[providerId],
-		newCommodity(name, value))
+	// There is no such provider
+	e.CommodityBought[providerId] = map[string]*Commodity {
+		name: newCommodity(name, value),
+	}
 }
 
 func (e *Entity) printEntity() {
@@ -92,6 +91,21 @@ func (e *Entity) getProviderIds() []int64 {
 		i++
 	}
 	return p
+}
+
+func (e *Entity) computeAvgBoughtValues() {
+	l := len(e.CommodityBought)
+	for _, commBoughtMap := range e.CommodityBought {
+		for name, commBought := range commBoughtMap {
+			e.AvgCommBoughtValue[name] += commBought.Value
+			if log.GetLevel() >= log.DebugLevel {
+				log.Debugf("avg[%s]: %+v", commBought.Name, e.AvgCommBoughtValue[commBought.Name])
+			}
+		}
+	}
+	for k, v := range e.AvgCommBoughtValue {
+		e.AvgCommBoughtValue[k] = v / float64(l)
+	}
 }
 
 func newTopology() *Topology {

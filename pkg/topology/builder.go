@@ -148,5 +148,10 @@ func (t *TopologyBuilder) processCommodityBought(tp *Topology) error {
 			entity.createCommodityBoughtIfAbsent(key, val, providerId)
 		}
 	}
+	// Calculate average commodity bought values
+	// Todo: Optimize and move up to the above loop
+	for _, entity := range tp.Entities {
+		entity.computeAvgBoughtValues()
+	}
 	return nil
 }
