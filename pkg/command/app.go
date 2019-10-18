@@ -31,22 +31,39 @@ func GetApplication(c *cli.Context) error {
 	}
 	appName := c.Args().Get(0)
 	if appName == "" {
-		listAll(c.String("cluster"), tp)
+		listAll(c, tp)
 		return nil
 	}
 	showOne(appName, tp)
 	return nil
 }
 
-func listAll(scope string, tp *topology.Topology) {
-	containerPods := tp.GetContainerPodsInCluster(scope)
+func listAll(c *cli.Context, tp *topology.Topology) {
+	containerPods := tp.GetContainerPodsInCluster(c.String("cluster"))
+	if containerPods == nil {
+		return
+	}
 	nodes := topology.NewSupplyChainResolver().GetSupplyChainNodes(containerPods)
 	for _, node := range nodes {
 		if node.EntityType == int32(proto.EntityDTO_APPLICATION) {
+			if node.Members.Cardinality() < 1 {
+				return
+			}
+			sortMetric := c.String("sort")
+			sortType := topology.SortTypeCommoditySold
+			if sortMetric == "VCPU" || sortMetric == "VMEM" {
+				sortMetric += "_USED"
+				sortType = topology.SortTypeCommodityBought
+			}
+			topology.SetEntityListSortStrategy(sortType, sortMetric)
+			var entities []*topology.Entity
+			for entity := range node.Members.Iterator().C {
+				entities = append(entities, entity.(*topology.Entity))
+			}
+			sortedEntities := topology.SortEntities(entities)
 			fmt.Printf(format_list_all_header,
 				"Name", "VCPU", "VMEM", "QPS", "LATENCY")
-			for entity := range node.Members.Iterator().C {
-				app := entity.(*topology.Entity)
+			for _, app := range sortedEntities {
 				avgValue := app.AvgCommBoughtValue
 				avgVCPU, _ := avgValue["VCPU_USED"]
 				avgVMem, _ := avgValue["VMEM_USED"]
