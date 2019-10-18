@@ -7,5 +7,6 @@ var (
 		Name: "cluster",
 		Required: true,
 		Usage: "Specify the `NAME` of the cluster to which the entities belong",
+		EnvVar: "TURBO_CLUSTER",
 	}
 )

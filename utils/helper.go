@@ -1,38 +1,40 @@
 package utils
 
-/*
-func GetAvgBoughtUsed(commBoughtMap map[int64][]*topology.CommodityBought) map[string]float64 {
-	avgUsed := make(map[string]float64)
+import (
+	log "github.com/sirupsen/logrus"
+	"github.com/turbonomic/turbotower/pkg/topology"
+)
+
+func GetAvgBoughtValues(commBoughtMap map[int64][]*topology.Commodity) map[string]float64 {
+	avg := make(map[string]float64)
 	l := len(commBoughtMap)
 	for _, commBoughtList := range commBoughtMap {
 		if log.GetLevel() >= log.DebugLevel {
 			log.Debugf("commBoughtList: %+v", commBoughtList)
 		}
 		for _, commBought := range commBoughtList {
-			avgUsed[commBought.Name] += commBought.Used
+			avg[commBought.Name] += commBought.Value
 			if log.GetLevel() >= log.DebugLevel {
-				log.Debugf("avgUsed[%s]: %+v", commBought.Name, avgUsed[commBought.Name])
+				log.Debugf("avg[%s]: %+v", commBought.Name, avg[commBought.Name])
 			}
 		}
 	}
-	for k, v := range avgUsed {
-		avgUsed[k] = v/float64(l)
+	for k, v := range avg {
+		avg[k] = v / float64(l)
 	}
-	if log.GetLevel() >= log.DebugLevel {
-		log.Debugf("Entity created: %+v", avgUsed)
-	}
-	return avgUsed
+	return avg
 }
 
-func GetSoldUsedUtil(commSoldList []*topology.CommoditySold) map[string]float64 {
-	soldUsedUtil := make(map[string]float64)
+
+func GetSoldValues(commSoldList []*topology.Commodity) map[string]float64 {
+	soldValues := make(map[string]float64)
 	for _, commSold := range commSoldList {
-		soldUsedUtil[commSold.Name + "_USED"] = commSold.Used
-		soldUsedUtil[commSold.Name + "_UTIL"] = commSold.Used/commSold.Capacity * 100
+		soldValues[commSold.Name] = commSold.Value
+
 	}
-	return soldUsedUtil
+	return soldValues
 }
-*/
+
 func Truncate(s string, max_len int) string {
 	l := len(s)
 	if l < max_len {

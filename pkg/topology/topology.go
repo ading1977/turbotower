@@ -136,6 +136,17 @@ func (t *Topology) GetVirtualMachinesInCluster(clusterName string) []*Entity {
 	return t.getEntitiesInCluster(clusterName, int32(proto.EntityDTO_VIRTUAL_MACHINE))
 }
 
+func (t *Topology) GetEntityByNameAndType(name string, entityType int32) *Entity {
+	if entityList, found := t.EntityTypeIndex[entityType]; found {
+		for _, entity := range entityList {
+			if entity.Name == name {
+				return entity
+			}
+		}
+	}
+	return nil
+}
+
 func (t *Topology) PrintEntityTypeIndex() {
 	log.Infof("%-20s%-15s", "Type", "Count")
 	for t, e := range t.EntityTypeIndex {

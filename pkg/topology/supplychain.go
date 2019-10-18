@@ -4,8 +4,15 @@ import (
 	set "github.com/deckarep/golang-set"
 	log "github.com/sirupsen/logrus"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
+	"sort"
 	"strings"
 )
+
+type SupplyChainNodeList []*SupplyChainNode
+
+func (l SupplyChainNodeList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l SupplyChainNodeList) Len() int           { return len(l) }
+func (l SupplyChainNodeList) Less(i, j int) bool { return l[i].Depth < l[j].Depth }
 
 type neighborFunc func(e *Entity) []*Entity
 
@@ -46,7 +53,25 @@ func (n *SupplyChainNode) addMember(entity *Entity) {
 	n.Members.Add(entity)
 }
 
-func (n *SupplyChainNode) printNode() {
+func (n *SupplyChainNode) GetProviderTypes() []string {
+	var providerTypes []string
+	for providerType := range n.ConnectedProviderTypes.Iterator().C {
+		entityType, _ := proto.EntityDTO_EntityType_name[providerType.(int32)]
+		providerTypes = append(providerTypes, entityType)
+	}
+	return providerTypes
+}
+
+func (n *SupplyChainNode) GetConsumerTypes() []string {
+	var consumerTypes []string
+	for consumerType := range n.ConnectedConsumerTypes.Iterator().C {
+		entityType, _ := proto.EntityDTO_EntityType_name[consumerType.(int32)]
+		consumerTypes = append(consumerTypes, entityType)
+	}
+	return consumerTypes
+}
+
+func (n *SupplyChainNode) PrintNode() {
 	log.Infof("Depth: %d", n.Depth)
 	var providerTypes, consumerTypes, members []string
 	for providerType := range n.ConnectedProviderTypes.Iterator().C {
@@ -74,7 +99,8 @@ func NewSupplyChainResolver() *SupplyChainResolver {
 	}
 }
 
-func (s *SupplyChainResolver) GetSupplyChainNodes(startingVertices []*Entity) {
+func (s *SupplyChainResolver) GetSupplyChainNodes(
+	startingVertices []*Entity) []*SupplyChainNode {
 	s.Frontier = startingVertices
 	log.Infof("Collect supply chain providers")
 	// Collect supply chain providers
@@ -90,7 +116,12 @@ func (s *SupplyChainResolver) GetSupplyChainNodes(startingVertices []*Entity) {
 	s.Frontier = frontier
 	s.traverseSupplyChain(GetConsumers, 0, -1)
 	s.collectNodeProviderConsumerTypes()
-	s.PrintNodeMap()
+	var supplyChainNodeList SupplyChainNodeList
+	for _, node := range s.NodeMap {
+		supplyChainNodeList = append(supplyChainNodeList, node)
+	}
+	sort.Sort(supplyChainNodeList)
+	return supplyChainNodeList
 }
 
 func (s *SupplyChainResolver) traverseSupplyChain(neighborFunc neighborFunc,
@@ -147,14 +178,5 @@ func (s *SupplyChainResolver) collectNodeProviderConsumerTypes() {
 				node.ConnectedConsumerTypes.Add(consumer.EntityType)
 			}
 		}
-	}
-}
-
-func (s *SupplyChainResolver) PrintNodeMap() {
-	for eType, node := range s.NodeMap {
-		entityType, _ := proto.EntityDTO_EntityType_name[eType]
-		log.Infof("Entity Type: %s", entityType)
-		node.printNode()
-		log.Println()
 	}
 }
