@@ -1,43 +1,47 @@
-package influx
+package topology
 
 import (
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
-	"github.com/turbonomic/turbotower/pkg/topology"
+	"github.com/turbonomic/turbotower/pkg/influx"
 	"github.com/urfave/cli"
 	"strconv"
 )
 
-const (
-	format_get_app_header  = "%-60s%-10s%-15s%-10s%-10s\n"
-	format_get_app_content = "%-60s%-10.2f%-15.2f%-10s%-10s\n"
-)
-
-func GetApplication(c *cli.Context) error {
-	db, err := newDBInstance(c)
-	if err != nil {
-		return err
-	}
-	defer db.close()
-	tp := topology.NewTopology()
-	err = processCommoditySold(c, db, tp)
-	err = processCommodityBought(c, db, tp)
-	tp.BuildGraph()
-	tp.PrintGraph()
-	tp.PrintEntityTypeIndex()
-	containerEntities := tp.EntityTypeIndex[int32(proto.EntityDTO_CONTAINER)]
-	topology.NewSupplyChainResolver().GetSupplyChainNodes(containerEntities)
-	return err
+type TopologyBuilder struct {
+	db      *influx.DBInstance
+	context *cli.Context
 }
 
-func processCommoditySold(c *cli.Context, db *DBInstance, tp *topology.Topology) error {
+func NewTopologyBuilder(db *influx.DBInstance, context *cli.Context) *TopologyBuilder {
+	return &TopologyBuilder{
+		db:      db,
+		context: context,
+	}
+}
+
+func (t *TopologyBuilder) Build() (*Topology, error) {
+	tp := newTopology()
+	if err := t.processCommoditySold(tp); err != nil {
+		return nil, err
+	}
+	if err := t.processCommodityBought(tp); err != nil {
+		return nil, err
+	}
+	tp.buildGraph()
+	//tp.PrintGraph()
+	//tp.PrintEntityTypeIndex()
+	return tp, nil
+}
+
+func (t *TopologyBuilder) processCommoditySold(tp *Topology) error {
 	commoditySoldTagKeys := []string{"oid", "entity_type", "display_name", "VM_CLUSTER", "HOST_CLUSTER"}
-	columns := append(commoditySoldFieldKeys, commoditySoldTagKeys...)
-	row, err := db.query(newDBQuery(c).
-		withColumns(columns...).
-		withName("commodity_sold"))
+	columns := append(influx.CommoditySoldFieldKeys, commoditySoldTagKeys...)
+	row, err := t.db.Query(influx.NewDBQuery(t.context).
+		WithColumns(columns...).
+		WithName("commodity_sold"))
 	if err != nil {
 		return err
 	}
@@ -64,9 +68,9 @@ func processCommoditySold(c *cli.Context, db *DBInstance, tp *topology.Topology)
 			}
 		}
 		// Get or create the entity
-		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType, groupNames...)
+		entity := tp.createEntityIfAbsent(displayName, oid, entityType, groupNames...)
 		// Parse commodity values
-		for i, key := range commoditySoldFieldKeys {
+		for i, key := range influx.CommoditySoldFieldKeys {
 			valObj := value[i+1]
 			if valObj == nil {
 				if log.GetLevel() >= log.DebugLevel {
@@ -81,18 +85,18 @@ func processCommoditySold(c *cli.Context, db *DBInstance, tp *topology.Topology)
 			if log.GetLevel() >= log.DebugLevel {
 				log.Debugf("Field value of %v is %v", key, val)
 			}
-			entity.CreateCommoditySoldIfAbsent(key, val)
+			entity.createCommoditySoldIfAbsent(key, val)
 		}
 	}
 	return nil
 }
 
-func processCommodityBought(c *cli.Context, db *DBInstance, tp *topology.Topology) error {
+func (t *TopologyBuilder) processCommodityBought(tp *Topology) error {
 	commodityBoughtTagKeys := []string{"oid", "provider_id", "entity_type", "display_name", "VM_CLUSTER", "HOST_CLUSTER"}
-	columns := append(commodityBoughtFieldKeys, commodityBoughtTagKeys...)
-	row, err := db.query(newDBQuery(c).
-		withColumns(columns...).
-		withName("commodity_bought"))
+	columns := append(influx.CommodityBoughtFieldKeys, commodityBoughtTagKeys...)
+	row, err := t.db.Query(influx.NewDBQuery(t.context).
+		WithColumns(columns...).
+		WithName("commodity_bought"))
 	if err != nil {
 		return err
 	}
@@ -124,9 +128,9 @@ func processCommodityBought(c *cli.Context, db *DBInstance, tp *topology.Topolog
 			}
 		}
 		// Get or create the entity
-		entity := tp.CreateEntityIfAbsent(displayName, oid, entityType, groupNames...)
+		entity := tp.createEntityIfAbsent(displayName, oid, entityType, groupNames...)
 		// Parse commodity values
-		for i, key := range commodityBoughtFieldKeys {
+		for i, key := range influx.CommodityBoughtFieldKeys {
 			valObj := value[i+1]
 			if valObj == nil {
 				if log.GetLevel() >= log.DebugLevel {
@@ -141,7 +145,7 @@ func processCommodityBought(c *cli.Context, db *DBInstance, tp *topology.Topolog
 			if log.GetLevel() >= log.DebugLevel {
 				log.Debugf("Field value of %v is %v", key, val)
 			}
-			entity.CreateCommodityBoughtIfAbsent(key, val, providerId)
+			entity.createCommodityBoughtIfAbsent(key, val, providerId)
 		}
 	}
 	return nil

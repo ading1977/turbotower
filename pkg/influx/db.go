@@ -15,7 +15,7 @@ type DBQuery struct {
 	precision   string
 	desc        bool
 	columns     []string // SELECT
-	name        string   // FROM (query one measurement)
+	name        string   // FROM (Query one measurement)
 	conditions  []string // WHERE
 	groupByTags []string // GROUP BY
 }
@@ -25,7 +25,7 @@ type DBInstance struct {
 	cliContext   *cli.Context
 }
 
-func newDBQuery(c *cli.Context) (*DBQuery) {
+func NewDBQuery(c *cli.Context) (*DBQuery) {
 	return &DBQuery{
 		columns:   []string{},
 		database:  c.GlobalString("database"),
@@ -35,42 +35,42 @@ func newDBQuery(c *cli.Context) (*DBQuery) {
 	}
 }
 
-func (q *DBQuery) withQueryType(queryType string) *DBQuery {
+func (q *DBQuery) WithQueryType(queryType string) *DBQuery {
 	q.queryType = queryType
 	return q
 }
 
-func (q *DBQuery) withColumns(columns ...string) *DBQuery {
+func (q *DBQuery) WithColumns(columns ...string) *DBQuery {
 	q.columns = append(q.columns, columns...)
 	return q
 }
 
-func (q *DBQuery) withName(name string) *DBQuery {
+func (q *DBQuery) WithName(name string) *DBQuery {
 	q.name = name
 	return q
 }
 
-func (q *DBQuery) isDesc() *DBQuery {
+func (q *DBQuery) IsDesc() *DBQuery {
 	q.desc = true
 	return q
 }
 
-func (q *DBQuery) withDatabase(database string) *DBQuery {
+func (q *DBQuery) WithDatabase(database string) *DBQuery {
 	q.database = database
 	return q
 }
 
-func (q *DBQuery) withPrecision(precision string) *DBQuery {
+func (q *DBQuery) WithPrecision(precision string) *DBQuery {
 	q.precision = precision
 	return q
 }
 
-func (q *DBQuery) withConditions(conditions ...string) *DBQuery {
+func (q *DBQuery) WithConditions(conditions ...string) *DBQuery {
 	q.conditions = append(q.conditions, conditions...)
 	return q
 }
 
-func (q *DBQuery) withGroupByTags(groupByTags ...string) *DBQuery {
+func (q *DBQuery) WithGroupByTags(groupByTags ...string) *DBQuery {
 	q.groupByTags = append(q.groupByTags, groupByTags...)
 	return q
 }
@@ -100,7 +100,7 @@ func (q *DBQuery) build() string {
 	return query
 }
 
-func newDBInstance(c *cli.Context) (*DBInstance, error) {
+func NewDBInstance(c *cli.Context) (*DBInstance, error) {
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: "http://" + c.GlobalString("influxdb"),
 	})
@@ -113,12 +113,12 @@ func newDBInstance(c *cli.Context) (*DBInstance, error) {
 	}, nil
 }
 
-func (db *DBInstance) close() {
+func (db *DBInstance) Close() {
 	// Ignore error
 	_ = db.influxClient.Close()
 }
 
-func (db *DBInstance) query(dbQuery *DBQuery) (*models.Row, error) {
+func (db *DBInstance) Query(dbQuery *DBQuery) (*models.Row, error) {
 	queryString := dbQuery.build()
 	if log.GetLevel() >= log.DebugLevel {
 		log.Debugf("DB query string %s", queryString)

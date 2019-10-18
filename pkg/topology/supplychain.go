@@ -108,7 +108,7 @@ func (s *SupplyChainResolver) traverseSupplyChain(neighborFunc neighborFunc,
 	var nextFrontier []*Entity
 	var visitedEntityTypesInThisDepth = set.NewSet()
 	// Process the current depth
-	log.Infof("Current depth %d", currentDepth)
+	//log.Infof("Current depth %d", currentDepth)
 	for len(s.Context.Frontier) > 0 {
 		// Dequeue
 		vertex := s.Context.Frontier[0]
@@ -117,7 +117,7 @@ func (s *SupplyChainResolver) traverseSupplyChain(neighborFunc neighborFunc,
 			continue
 		}
 		s.Context.VisitedEntities.Add(vertex)
-		log.Infof("Visiting %s", vertex.Name)
+		//log.Infof("Visiting %s", vertex.Name)
 		// Only add a node when we have not already visited an entity of the same type
 		if !s.Context.VisitedEntityTypes.Contains(vertex.EntityType) {
 			neighbors := neighborFunc(vertex)
@@ -132,16 +132,14 @@ func (s *SupplyChainResolver) traverseSupplyChain(neighborFunc neighborFunc,
 				log.Infof("Create a new supply chain node for %s", entityType)
 				node = NewSupplyChainNode(vertex.EntityType, currentDepth)
 				s.Context.NodeMap[vertex.EntityType] = node
-			} else {
-				log.Infof("Using existing node with type %v", vertex.EntityType)
 			}
-			log.Infof("Adding a member %s to node type %v", vertex.Name, vertex.EntityType)
+			//log.Infof("Adding a member %s to node type %v", vertex.Name, vertex.EntityType)
 			node.addMember(vertex)
 			visitedEntityTypesInThisDepth.Add(vertex.EntityType)
 		}
 	}
 	s.Context.VisitedEntityTypes = s.Context.VisitedEntityTypes.Union(visitedEntityTypesInThisDepth)
-	log.Infof("Visited entity types %v", s.Context.VisitedEntityTypes)
+	//log.Infof("Visited entity types %v", s.Context.VisitedEntityTypes)
 	// Process the next depth
 	if len(nextFrontier) > 0 {
 		s.Context.Frontier = nextFrontier

@@ -22,11 +22,16 @@ type Entity struct {
 	Groups          set.Set
 }
 
-func NewCommodity(name string, value float64) *Commodity {
+type Topology struct {
+	Entities        map[int64]*Entity
+	EntityTypeIndex map[int32][]*Entity
+}
+
+func newCommodity(name string, value float64) *Commodity {
 	return &Commodity{name, value}
 }
 
-func NewEntity(name string, oid int64, entityType int32) *Entity {
+func newEntity(name string, oid int64, entityType int32) *Entity {
 	return &Entity{
 		Name:            name,
 		OID:             oid,
@@ -36,17 +41,17 @@ func NewEntity(name string, oid int64, entityType int32) *Entity {
 	}
 }
 
-func (e *Entity) CreateCommoditySoldIfAbsent(name string, value float64) {
+func (e *Entity) createCommoditySoldIfAbsent(name string, value float64) {
 	for _, commSold := range e.CommoditySold {
 		if commSold.Name == name {
 			// There is already a commodity with the same name
 			return
 		}
 	}
-	e.CommoditySold = append(e.CommoditySold, NewCommodity(name, value))
+	e.CommoditySold = append(e.CommoditySold, newCommodity(name, value))
 }
 
-func (e *Entity) CreateCommodityBoughtIfAbsent(name string, value float64, providerId int64) {
+func (e *Entity) createCommodityBoughtIfAbsent(name string, value float64, providerId int64) {
 	if commBoughtList, found := e.CommodityBought[providerId]; found {
 		for _, commBought := range commBoughtList {
 			if commBought.Name == name {
@@ -57,10 +62,10 @@ func (e *Entity) CreateCommodityBoughtIfAbsent(name string, value float64, provi
 	}
 	// There is no such provider or there is no such commodity from this provider
 	e.CommodityBought[providerId] = append(e.CommodityBought[providerId],
-		NewCommodity(name, value))
+		newCommodity(name, value))
 }
 
-func (e *Entity) PrintEntity() {
+func (e *Entity) printEntity() {
 	entityType, _ := proto.EntityDTO_EntityType_name[e.EntityType]
 	log.Infof("OID: %d Type: %s Name: %s", e.OID, entityType, e.Name)
 	log.Infof("Belongs to %v", e.Groups)
@@ -79,7 +84,7 @@ func (e *Entity) PrintEntity() {
 	}
 }
 
-func (e *Entity) GetProviderIds() []int64 {
+func (e *Entity) getProviderIds() []int64 {
 	p := make([]int64, len(e.CommodityBought))
 	i := 0
 	for k := range e.CommodityBought {
@@ -89,30 +94,17 @@ func (e *Entity) GetProviderIds() []int64 {
 	return p
 }
 
-func (e *Entity) AddProvider(provider *Entity) {
-	e.Providers = append(e.Providers, provider)
-}
-
-func (e *Entity) AddConsumer(consumer *Entity) {
-	e.Consumers = append(e.Consumers, consumer)
-}
-
-type Topology struct {
-	Entities        map[int64]*Entity
-	EntityTypeIndex map[int32][]*Entity
-}
-
-func NewTopology() *Topology {
+func newTopology() *Topology {
 	return &Topology{
 		Entities:        make(map[int64]*Entity),
 		EntityTypeIndex: make(map[int32][]*Entity),
 	}
 }
 
-func (t *Topology) CreateEntityIfAbsent(name string, oid int64, entityType int32, groups ...string) *Entity {
+func (t *Topology) createEntityIfAbsent(name string, oid int64, entityType int32, groups ...string) *Entity {
 	e, found := t.Entities[oid]
 	if !found {
-		e = NewEntity(name, oid, entityType)
+		e = newEntity(name, oid, entityType)
 		t.Entities[oid] = e
 	}
 	for _, group := range groups {
@@ -121,11 +113,27 @@ func (t *Topology) CreateEntityIfAbsent(name string, oid int64, entityType int32
 	return e
 }
 
-func (t *Topology) PrintEntities() {
-	for _, entity := range t.Entities {
-		entity.PrintEntity()
-		log.Println()
+func (t *Topology) getEntitiesInCluster(clusterName string, entityType int32) []*Entity {
+	//log.Infof("Get entities in cluster %v", clusterName)
+	var entities []*Entity
+	if entityList, found := t.EntityTypeIndex[entityType]; found {
+		for _, entity := range entityList {
+			//log.Infof("Checking %v %v", entity.Name, entity.Groups)
+			if entity.Groups.Contains(clusterName) {
+				//log.Infof("Adding entity %v", entity.Name)
+				entities = append(entities, entity)
+			}
+		}
 	}
+	return entities
+}
+
+func (t *Topology) GetContainerPodsInCluster(clusterName string) []*Entity {
+	return t.getEntitiesInCluster(clusterName, int32(proto.EntityDTO_CONTAINER_POD))
+}
+
+func (t *Topology) GetVirtualMachinesInCluster(clusterName string) []*Entity {
+	return t.getEntitiesInCluster(clusterName, int32(proto.EntityDTO_VIRTUAL_MACHINE))
 }
 
 func (t *Topology) PrintEntityTypeIndex() {
@@ -135,7 +143,6 @@ func (t *Topology) PrintEntityTypeIndex() {
 		log.Infof("%-20s%-15d", entityType, len(e))
 	}
 }
-
 
 func (t *Topology) PrintGraph() {
 	for _, e := range t.Entities {
@@ -154,13 +161,21 @@ func (t *Topology) PrintGraph() {
 	}
 }
 
-func (t *Topology) BuildGraph() {
+func (e *Entity) addProvider(provider *Entity) {
+	e.Providers = append(e.Providers, provider)
+}
+
+func (e *Entity) addConsumer(consumer *Entity) {
+	e.Consumers = append(e.Consumers, consumer)
+}
+
+func (t *Topology) buildGraph() {
 	for _, entity := range t.Entities {
 		t.EntityTypeIndex[entity.EntityType] = append(t.EntityTypeIndex[entity.EntityType], entity)
-		for _, providerId := range entity.GetProviderIds() {
+		for _, providerId := range entity.getProviderIds() {
 			if provider, found := t.Entities[providerId]; found {
-				entity.AddProvider(provider)
-				provider.AddConsumer(entity)
+				entity.addProvider(provider)
+				provider.addConsumer(entity)
 			} else {
 				if log.GetLevel() >= log.DebugLevel {
 					log.Debugf("Cannot locate provider entity with provider ID %s",

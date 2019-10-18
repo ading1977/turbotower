@@ -43,8 +43,8 @@ var (
 		"VCPU",
 		"VMEM",
 	}
-	commodityBoughtFieldKeys = getCommodityBoughtFieldKeys()
-	commoditySoldFieldKeys = getCommoditySoldFields()
+	CommodityBoughtFieldKeys = getCommodityBoughtFieldKeys()
+	CommoditySoldFieldKeys = getCommoditySoldFields()
 )
 
 func getCommodityBoughtFieldKeys() []string{
