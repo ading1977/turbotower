@@ -36,15 +36,15 @@ var (
 						Flags:     []cli.Flag{flClusterName, flContainerSort, flSupplyChain},
 						ArgsUsage: "[NAME]",
 					},
-				/*
 					{
 						Name: "containerpod",
 						ShortName: "pod",
 						Usage: "Display one or many container pods",
 						Action: command.GetContainerPod,
-						Flags: []cli.Flag{flClusterName},
+						Flags:     []cli.Flag{flClusterName, flContainerSort, flSupplyChain},
 						ArgsUsage: "[NAME]",
 					},
+				/*
 					{
 						Name: "service",
 						ShortName: "s",

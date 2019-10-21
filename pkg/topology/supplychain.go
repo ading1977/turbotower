@@ -119,12 +119,12 @@ func (s *SupplyChainResolver) GetSupplyChainNodesFrom(
 	s.Frontier = startingVertices
 	// Collect supply chain providers
 	if s.SearchDirection != Up {
-		log.Infof("Collect supply chain providers")
+		log.Debugf("Collect supply chain providers")
 		s.traverseSupplyChain(GetProviders, 1, 1)
 	}
 	// Collect supply chain consumers
 	if s.SearchDirection != Down {
-		log.Infof("Collect supply chain consumers")
+		log.Debugf("Collect supply chain consumers")
 		var frontier []*Entity
 		for _, vertex := range startingVertices {
 			for _, neighbor := range GetConsumers(vertex) {
@@ -169,7 +169,7 @@ func (s *SupplyChainResolver) traverseSupplyChain(neighborFunc neighborFunc,
 			node, found := s.NodeMap[vertex.EntityType]
 			if !found {
 				entityType, _ := proto.EntityDTO_EntityType_name[vertex.EntityType]
-				log.Infof("Create a new supply chain node for %s", entityType)
+				log.Debugf("Create a new supply chain node for %s", entityType)
 				node = NewSupplyChainNode(vertex.EntityType, currentDepth)
 				s.NodeMap[vertex.EntityType] = node
 			}
