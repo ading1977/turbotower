@@ -17,7 +17,7 @@ var (
 					ShortName: "a",
 					Usage:     "Display one or many application",
 					Action:    command.GetApplication,
-					Flags:     []cli.Flag{flClusterName, flAppSort},
+					Flags:     []cli.Flag{flClusterName, flAppSort, flSupplyChain},
 					ArgsUsage: "[NAME]",
 				},
 				/*

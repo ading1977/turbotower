@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type SearchDirection int
+
+const (
+	Up   SearchDirection = 0
+	Down SearchDirection = 1
+	Full SearchDirection = 2
+)
+
 type SupplyChainNodeList []*SupplyChainNode
 
 func (l SupplyChainNodeList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
@@ -37,6 +45,7 @@ type SupplyChainResolver struct {
 	VisitedEntities    set.Set
 	NodeMap            map[int32]*SupplyChainNode
 	Frontier           []*Entity
+	SearchDirection    SearchDirection
 }
 
 func NewSupplyChainNode(entityType int32, depth int) *SupplyChainNode {
@@ -96,25 +105,35 @@ func NewSupplyChainResolver() *SupplyChainResolver {
 		VisitedEntityTypes: set.NewSet(),
 		VisitedEntities:    set.NewSet(),
 		NodeMap:            make(map[int32]*SupplyChainNode),
+		SearchDirection:    Full,
 	}
 }
 
-func (s *SupplyChainResolver) GetSupplyChainNodes(
+func (s *SupplyChainResolver) WithSearchDirection(direction SearchDirection) *SupplyChainResolver {
+	s.SearchDirection = direction
+	return s
+}
+
+func (s *SupplyChainResolver) GetSupplyChainNodesFrom(
 	startingVertices []*Entity) []*SupplyChainNode {
 	s.Frontier = startingVertices
-	log.Infof("Collect supply chain providers")
 	// Collect supply chain providers
-	s.traverseSupplyChain(GetProviders, 1, 1)
-	// Collect supply chain consumers
-	log.Infof("Collect supply chain consumers")
-	var frontier []*Entity
-	for _, vertex := range startingVertices {
-		for _, neighbor := range GetConsumers(vertex) {
-			frontier = append(frontier, neighbor)
-		}
+	if s.SearchDirection != Up {
+		log.Infof("Collect supply chain providers")
+		s.traverseSupplyChain(GetProviders, 1, 1)
 	}
-	s.Frontier = frontier
-	s.traverseSupplyChain(GetConsumers, 0, -1)
+	// Collect supply chain consumers
+	if s.SearchDirection != Down {
+		log.Infof("Collect supply chain consumers")
+		var frontier []*Entity
+		for _, vertex := range startingVertices {
+			for _, neighbor := range GetConsumers(vertex) {
+				frontier = append(frontier, neighbor)
+			}
+		}
+		s.Frontier = frontier
+		s.traverseSupplyChain(GetConsumers, 0, -1)
+	}
 	s.collectNodeProviderConsumerTypes()
 	var supplyChainNodeList SupplyChainNodeList
 	for _, node := range s.NodeMap {

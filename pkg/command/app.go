@@ -7,7 +7,6 @@ import (
 	"github.com/turbonomic/turbotower/pkg/topology"
 	"github.com/turbonomic/turbotower/utils"
 	"github.com/urfave/cli"
-	"strings"
 )
 
 var (
@@ -29,33 +28,53 @@ func GetApplication(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	appName := c.Args().Get(0)
-	if appName == "" {
-		listAll(c, tp)
-		return nil
+	// Set sort strategy
+	sortMetric := c.String("sort")
+	sortType := topology.SortTypeCommoditySold
+	if sortMetric == "VCPU" || sortMetric == "VMEM" {
+		sortMetric += "_USED"
+		sortType = topology.SortTypeCommodityBought
 	}
-	showOne(appName, tp)
-	return nil
+	topology.SetEntityListSortStrategy(sortType, sortMetric)
+	// Display
+	scope := c.String("cluster")
+	name := c.Args().Get(0)
+	if c.Bool("supplychain") {
+		return show(scope, name, tp)
+	}
+	return list(scope, name, tp)
 }
 
-func listAll(c *cli.Context, tp *topology.Topology) {
-	containerPods := tp.GetContainerPodsInCluster(c.String("cluster"))
-	if containerPods == nil {
-		return
+func list(scope, name string, tp *topology.Topology) error {
+	if name != "" {
+		app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_APPLICATION))
+		if app == nil {
+			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+			return fmt.Errorf("failed to get entity by name %s and type %s", name, entityType)
+		}
+		fmt.Printf(format_list_all_header,
+			"Name", "VCPU", "VMEM", "QPS", "LATENCY")
+		avgValue := app.AvgCommBoughtValue
+		avgVCPU, _ := avgValue["VCPU_USED"]
+		avgVMem, _ := avgValue["VMEM_USED"]
+		fmt.Printf(format_list_all_content,
+			utils.Truncate(app.Name, 55),
+			avgVCPU, avgVMem, "-", "-")
+		return nil
 	}
-	nodes := topology.NewSupplyChainResolver().GetSupplyChainNodes(containerPods)
+	containerPods := tp.GetContainerPodsInCluster(scope)
+	if containerPods == nil {
+		return fmt.Errorf("failed to get entities in cluster scope %s", scope)
+	}
+	nodes := topology.NewSupplyChainResolver().
+		WithSearchDirection(topology.Up).
+		GetSupplyChainNodesFrom(containerPods)
 	for _, node := range nodes {
 		if node.EntityType == int32(proto.EntityDTO_APPLICATION) {
 			if node.Members.Cardinality() < 1 {
-				return
+				entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+				return fmt.Errorf("failed to find any entity in the supply chain with type %s", entityType)
 			}
-			sortMetric := c.String("sort")
-			sortType := topology.SortTypeCommoditySold
-			if sortMetric == "VCPU" || sortMetric == "VMEM" {
-				sortMetric += "_USED"
-				sortType = topology.SortTypeCommodityBought
-			}
-			topology.SetEntityListSortStrategy(sortType, sortMetric)
 			var entities []*topology.Entity
 			for entity := range node.Members.Iterator().C {
 				entities = append(entities, entity.(*topology.Entity))
@@ -71,49 +90,25 @@ func listAll(c *cli.Context, tp *topology.Topology) {
 					utils.Truncate(app.Name, 55),
 					avgVCPU, avgVMem, "-", "-")
 			}
-			return
 		}
 	}
+	return nil
 }
 
-func showOne(name string, tp *topology.Topology) {
-	app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_APPLICATION))
-	if app == nil {
-		return
-	}
-	nodes := topology.NewSupplyChainResolver().GetSupplyChainNodes([]*topology.Entity{app})
-	for _, node := range nodes {
-		fmt.Printf(format_show_one_header_1,
-			"Type", "Count", "Providers", "Consumers")
-		entityType, _ := proto.EntityDTO_EntityType_name[node.EntityType]
-		count := node.Members.Cardinality()
-		providers := strings.Join(node.GetProviderTypes(), ",")
-		consumers := strings.Join(node.GetConsumerTypes(), ",")
-		fmt.Printf(format_show_one_content_1,
-			entityType, count, providers, consumers)
-		fmt.Printf(format_show_one_header_2,
-			"Name", "VCPU", "VMEM")
-		for item := range node.Members.Iterator().C {
-			entity := item.(*topology.Entity)
-			name := utils.Truncate(entity.Name, 45)
-			VCPU := "-"
-			VMem := "-"
-			soldValues := utils.GetSoldValues(entity.CommoditySold)
-			if used, found := soldValues["VCPU_USED"]; found {
-				VCPU = fmt.Sprintf("%.2f", used)
-				if capacity, found := soldValues["VCPU_CAPACITY"]; found {
-					VCPU += fmt.Sprintf(" (%.2f%%)", used/capacity*100)
-				}
-			}
-			if used, found := soldValues["VMEM_USED"]; found {
-				VMem = fmt.Sprintf("%.2f", used)
-				if capacity, found := soldValues["VMEM_CAPACITY"]; found {
-					VMem += fmt.Sprintf(" (%.2f%%)", used/capacity*100)
-				}
-			}
-			fmt.Printf(format_show_one_content_2,
-				name, VCPU, VMem)
+func show(scope, name string, tp *topology.Topology) error {
+	if name != "" {
+		app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_APPLICATION))
+		if app == nil {
+			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+			return fmt.Errorf("failed to get entity by name %s and type %s", name, entityType)
 		}
-		fmt.Println()
+		displaySupplyChain([]*topology.Entity{app}, false)
+		return nil
 	}
+	containerPods := tp.GetContainerPodsInCluster(scope)
+	if containerPods == nil {
+		return fmt.Errorf("failed to get entities in cluster scope %s", scope)
+	}
+	displaySupplyChain(containerPods, true)
+	return nil
 }

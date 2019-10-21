@@ -15,4 +15,9 @@ var (
 		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
 		EnvVar: "TURBO_SORT_METRIC",
 	}
+	flSupplyChain = &cli.BoolFlag{
+		Name: "supplychain, sc",
+		Usage: "Specify if a supply chain from this entity or group of entities should be displayed",
+		EnvVar: "TURBO_SHOW_SUPPLYCHAIN",
+	}
 )
