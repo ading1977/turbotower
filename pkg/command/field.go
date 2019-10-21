@@ -13,6 +13,7 @@ type display struct {
 	header   string
 	commName string
 	commType commType
+	factor   float64
 }
 
 var (
@@ -22,81 +23,95 @@ var (
 				header:   "QPS",
 				commName: "TRANSACTION",
 				commType: boughtType,
+				factor:   1.0,
 			},
 			{
 				header:   "LATENCY",
 				commName: "RESPONSE_TIME",
 				commType: boughtType,
+				factor:   1.0,
 			},
 		},
 		proto.EntityDTO_APPLICATION: {
 			{
-				header:   "VCPU",
+				header:   "VCPU (MHz)",
 				commName: "VCPU",
 				commType: boughtType,
+				factor:   1.0,
 			},
 			{
-				header:   "VMEM",
+				header:   "VMEM (GB)",
 				commName: "VMEM",
 				commType: boughtType,
+				factor:   1E-6,
 			},
 		},
 		proto.EntityDTO_CONTAINER: {
 			{
-				header:   "VCPU",
+				header:   "VCPU (MHz)",
 				commName: "VCPU",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "VMEM",
+				header:   "VMEM (GB)",
 				commName: "VMEM",
 				commType: soldType,
+				factor:   1E-6,
 			},
 		},
 		proto.EntityDTO_CONTAINER_POD: {
 			{
-				header:   "VCPU",
+				header:   "VCPU (MHz)",
 				commName: "VCPU",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "VMEM",
+				header:   "VMEM (GB)",
 				commName: "VMEM",
 				commType: soldType,
+				factor:   1E-6,
 			},
 		},
 		proto.EntityDTO_VIRTUAL_MACHINE: {
 			{
-				header:   "VCPU",
+				header:   "VCPU (MHz)",
 				commName: "VCPU",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "VMEM",
+				header:   "VMEM (GB)",
 				commName: "VMEM",
 				commType: soldType,
+				factor:   1E-6,
 			},
 			{
-				header:   "VCPUREQUEST",
+				header:   "VCPUREQUEST (MHz)",
 				commName: "VCPU_REQUEST",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "VMEMREQUEST",
+				header:   "VMEMREQUEST (GB)",
 				commName: "VMEM_REQUEST",
 				commType: soldType,
+				factor:   1E-6,
 			},
 		},
 		proto.EntityDTO_PHYSICAL_MACHINE: {
 			{
-				header:   "CPU",
+				header:   "CPU (MHz)",
 				commName: "CPU",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "MEM",
+				header:   "MEM (GB)",
 				commName: "MEM",
 				commType: soldType,
+				factor:   1E-6,
 			},
 		},
 		proto.EntityDTO_STORAGE: {
@@ -104,23 +119,27 @@ var (
 				header:   "AMOUNT",
 				commName: "STORAGE_AMOUNT",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
 				header:   "LATENCY",
 				commName: "STORAGE_LATENCY",
 				commType: soldType,
+				factor:   1.0,
 			},
 		},
 		proto.EntityDTO_DATACENTER: {
 			{
-				header:   "CPU",
+				header:   "CPU (MHz)",
 				commName: "CPU",
 				commType: soldType,
+				factor:   1.0,
 			},
 			{
-				header:   "MEM",
+				header:   "MEM (GB)",
 				commName: "MEM",
 				commType: soldType,
+				factor:   1E-6,
 			},
 		},
 	}

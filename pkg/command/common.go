@@ -47,9 +47,9 @@ func displaySupplyChain(seeds []*topology.Entity, summary bool) {
 func displayEntitiesInSupplyChainNode(
 	entities []*topology.Entity, entityType proto.EntityDTO_EntityType) {
 	headerValue2 := []interface{}{"NAME"}
-	displayFields := entitiesToTopCommoditiesMap[entityType]
+	displays := entitiesToTopCommoditiesMap[entityType]
 	i := 0
-	for _, displayField := range displayFields {
+	for _, displayField := range displays {
 		if i == 2 {
 			// Only display two metrics
 			break
@@ -61,23 +61,23 @@ func displayEntitiesInSupplyChainNode(
 	for _, entity := range entities {
 		contentValue2 := []interface{}{utils.Truncate(entity.Name, 45)}
 		i = 0
-		for _, displayField := range displayFields {
+		for _, display := range displays {
 			if i == 2 {
 				break
 			}
 			value := "-"
-			if displayField.commType == soldType {
-				used := entity.CommoditySold[displayField.commName+"_USED"]
-				capacity := entity.CommoditySold[displayField.commName+"_CAPACITY"]
+			if display.commType == soldType {
+				used := entity.CommoditySold[display.commName+"_USED"]
+				capacity := entity.CommoditySold[display.commName+"_CAPACITY"]
 				if used != nil && capacity != nil {
-					value = fmt.Sprintf("%.2f", used.Value)
+					value = fmt.Sprintf("%.2f", used.Value * display.factor)
 					if capacity.Value > 0 {
-						value += fmt.Sprintf(" (%.2f%%)", used.Value/capacity.Value*100)
+						value += fmt.Sprintf(" [%.2f%%]", used.Value/capacity.Value*100)
 					}
 				}
 			} else {
-				usedValue := entity.AvgCommBoughtValue[displayField.commName+"_USED"]
-				value = fmt.Sprintf("%.2f", usedValue)
+				usedValue := entity.AvgCommBoughtValue[display.commName+"_USED"]
+				value = fmt.Sprintf("%.2f", usedValue * display.factor)
 			}
 			contentValue2 = append(contentValue2, value)
 			i++
@@ -90,36 +90,36 @@ func displayEntities(entities []*topology.Entity, entityType proto.EntityDTO_Ent
 	maxNameLen := getMaxNameLength(entities) + 2
 	headerFormat := fmt.Sprintf("%%-%ds", maxNameLen)
 	headerValue := []interface{}{"NAME"}
-	displayFields := entitiesToTopCommoditiesMap[entityType]
-	for _, displayField := range displayFields {
-		if displayField.commType == soldType {
+	displays := entitiesToTopCommoditiesMap[entityType]
+	for _, display := range displays {
+		if display.commType == soldType {
 			headerFormat += "%-20s"
 		} else {
 			headerFormat += "%-10s"
 		}
-		headerValue = append(headerValue, displayField.header)
+		headerValue = append(headerValue, display.header)
 	}
 	headerFormat += "\n"
 	fmt.Printf(headerFormat, headerValue...)
 	for _, entity := range entities {
 		contentFormat := fmt.Sprintf("%%-%ds", maxNameLen)
 		contentValue := []interface{}{entity.Name}
-		for _, displayField := range displayFields {
+		for _, display := range displays {
 			value := "-"
-			if displayField.commType == soldType {
+			if display.commType == soldType {
 				contentFormat += "%-20s"
-				used := entity.CommoditySold[displayField.commName+"_USED"]
-				capacity := entity.CommoditySold[displayField.commName+"_CAPACITY"]
+				used := entity.CommoditySold[display.commName+"_USED"]
+				capacity := entity.CommoditySold[display.commName+"_CAPACITY"]
 				if used != nil && capacity != nil {
-					value = fmt.Sprintf("%.2f", used.Value)
+					value = fmt.Sprintf("%.2f", used.Value * display.factor)
 					if capacity.Value > 0 {
-						value += fmt.Sprintf(" (%.2f%%)", used.Value/capacity.Value*100)
+						value += fmt.Sprintf(" [%.2f%%]", used.Value/capacity.Value*100)
 					}
 				}
 			} else {
 				contentFormat += "%-10s"
-				usedValue := entity.AvgCommBoughtValue[displayField.commName+"_USED"]
-				value = fmt.Sprintf("%.2f", usedValue)
+				usedValue := entity.AvgCommBoughtValue[display.commName+"_USED"]
+				value = fmt.Sprintf("%.2f", usedValue * display.factor)
 			}
 			contentValue = append(contentValue, value)
 		}
