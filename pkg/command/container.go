@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func GetApplication(c *cli.Context) error {
+func GetContainer(c *cli.Context) error {
 	db, err := influx.NewDBInstance(c)
 	if err != nil {
 		return err
@@ -30,19 +30,19 @@ func GetApplication(c *cli.Context) error {
 	scope := c.String("cluster")
 	name := c.Args().Get(0)
 	if c.Bool("supplychain") {
-		return showApp(scope, name, tp)
+		return showContainer(scope, name, tp)
 	}
-	return listApp(scope, name, tp)
+	return listContainer(scope, name, tp)
 }
 
-func listApp(scope, name string, tp *topology.Topology) error {
+func listContainer(scope, name string, tp *topology.Topology) error {
 	if name != "" {
-		app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_APPLICATION))
+		app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_CONTAINER))
 		if app == nil {
-			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_CONTAINER)]
 			return fmt.Errorf("failed to get entity by name %s and type %s", name, entityType)
 		}
-		displayEntities([]*topology.Entity{app}, proto.EntityDTO_APPLICATION)
+		displayEntities([]*topology.Entity{app}, proto.EntityDTO_CONTAINER)
 		return nil
 	}
 	containerPods := tp.GetContainerPodsInCluster(scope)
@@ -53,9 +53,9 @@ func listApp(scope, name string, tp *topology.Topology) error {
 		WithSearchDirection(topology.Up).
 		GetSupplyChainNodesFrom(containerPods)
 	for _, node := range nodes {
-		if node.EntityType == int32(proto.EntityDTO_APPLICATION) {
+		if node.EntityType == int32(proto.EntityDTO_CONTAINER) {
 			if node.Members.Cardinality() < 1 {
-				entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+				entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_CONTAINER)]
 				return fmt.Errorf("failed to find any entity in the supply chain with type %s", entityType)
 			}
 			var entities []*topology.Entity
@@ -63,20 +63,20 @@ func listApp(scope, name string, tp *topology.Topology) error {
 				entities = append(entities, entity.(*topology.Entity))
 			}
 			sortedEntities := topology.SortEntities(entities)
-			displayEntities(sortedEntities, proto.EntityDTO_APPLICATION)
+			displayEntities(sortedEntities, proto.EntityDTO_CONTAINER)
 		}
 	}
 	return nil
 }
 
-func showApp(scope, name string, tp *topology.Topology) error {
+func showContainer(scope, name string, tp *topology.Topology) error {
 	if name != "" {
-		app := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_APPLICATION))
-		if app == nil {
-			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
+		container := tp.GetEntityByNameAndType(name, int32(proto.EntityDTO_CONTAINER))
+		if container == nil {
+			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_CONTAINER)]
 			return fmt.Errorf("failed to get entity by name %s and type %s", name, entityType)
 		}
-		displaySupplyChain([]*topology.Entity{app}, false)
+		displaySupplyChain([]*topology.Entity{container}, false)
 		return nil
 	}
 	containerPods := tp.GetContainerPodsInCluster(scope)

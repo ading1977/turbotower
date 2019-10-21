@@ -20,7 +20,7 @@ var (
 					Flags:     []cli.Flag{flClusterName, flAppSort, flSupplyChain},
 					ArgsUsage: "[NAME]",
 				},
-				/*
+
 					{
 						Name: "cluster",
 						ShortName: "cl",
@@ -33,8 +33,10 @@ var (
 						ShortName: "cnt",
 						Usage: "Display one or many containers",
 						Action: command.GetContainer,
+						Flags:     []cli.Flag{flClusterName, flContainerSort, flSupplyChain},
 						ArgsUsage: "[NAME]",
 					},
+				/*
 					{
 						Name: "containerpod",
 						ShortName: "pod",

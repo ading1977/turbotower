@@ -13,7 +13,11 @@ var (
 		Name: "sort, s",
 		Value: "VCPU",
 		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
-		EnvVar: "TURBO_SORT_METRIC",
+	}
+	flContainerSort = &cli.StringFlag{
+		Name: "sort, s",
+		Value: "VCPU",
+		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
 	}
 	flSupplyChain = &cli.BoolFlag{
 		Name: "supplychain, sc",

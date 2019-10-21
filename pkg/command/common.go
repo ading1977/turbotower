@@ -92,7 +92,7 @@ func displayEntities(entities []*topology.Entity, entityType proto.EntityDTO_Ent
 	displayFields := entitiesToTopCommoditiesMap[entityType]
 	for _, displayField := range displayFields {
 		if displayField.commType == soldType {
-			headerFormat += "%-15s"
+			headerFormat += "%-20s"
 		} else {
 			headerFormat += "%-10s"
 		}
@@ -106,7 +106,7 @@ func displayEntities(entities []*topology.Entity, entityType proto.EntityDTO_Ent
 		for _, displayField := range displayFields {
 			value := "-"
 			if displayField.commType == soldType {
-				contentFormat += "%-15s"
+				contentFormat += "%-20s"
 				used := entity.CommoditySold[displayField.commName+"_USED"]
 				capacity := entity.CommoditySold[displayField.commName+"_CAPACITY"]
 				if used != nil && capacity != nil {

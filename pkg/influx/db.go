@@ -94,7 +94,7 @@ func (q *DBQuery) build() string {
 		query = "SHOW TAG VALUES FROM " + q.name
 		query += " WITH KEY IN (" + strings.Join(q.columns, ",") + ")"
 		if len(q.conditions) > 0 {
-			query += " WHERE " + strings.Join(q.conditions, " ")
+			query += " WHERE " + strings.Join(q.conditions, " AND ")
 		}
 	}
 	return query
