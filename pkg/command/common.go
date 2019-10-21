@@ -8,48 +8,132 @@ import (
 	"strings"
 )
 
+var (
+	headerFormat1  = "%-25s%-25s%-30s%-30s\n"
+	contentFormat1 = "%-25s%-25d%-30s%-30s\n"
+	headerFormat2  = "%-50s%-30s%-30s\n"
+	contentFormat2 = "%-50s%-30s%-30s\n"
+)
+
 func displaySupplyChain(seeds []*topology.Entity, summary bool) {
 	nodes := topology.NewSupplyChainResolver().GetSupplyChainNodesFrom(seeds)
 	if summary {
-		fmt.Printf(format_show_one_header_1,
-			"Type", "Count", "Providers", "Consumers")
+		fmt.Printf(headerFormat1,
+			"TYPE", "COUNT", "PROVIDERS", "CONSUMERS")
 	}
 	for _, node := range nodes {
 		if !summary {
-			fmt.Printf(format_show_one_header_1,
-				"Type", "Count", "Providers", "Consumers")
+			fmt.Printf(headerFormat1,
+				"TYPE", "COUNT", "PROVIDERS", "CONSUMERS")
 		}
 		entityType, _ := proto.EntityDTO_EntityType_name[node.EntityType]
 		count := node.Members.Cardinality()
 		providers := strings.Join(node.GetProviderTypes(), ",")
 		consumers := strings.Join(node.GetConsumerTypes(), ",")
-		fmt.Printf(format_show_one_content_1,
+		fmt.Printf(contentFormat1,
 			entityType, count, providers, consumers)
 		if !summary {
-			fmt.Printf(format_show_one_header_2,
-				"Name", "VCPU", "VMEM")
-			for item := range node.Members.Iterator().C {
-				entity := item.(*topology.Entity)
-				name := utils.Truncate(entity.Name, 45)
-				VCPU := "-"
-				VMem := "-"
-				soldValues := utils.GetSoldValues(entity.CommoditySold)
-				if used, found := soldValues["VCPU_USED"]; found {
-					VCPU = fmt.Sprintf("%.2f", used)
-					if capacity, found := soldValues["VCPU_CAPACITY"]; found {
-						VCPU += fmt.Sprintf(" (%.2f%%)", used/capacity*100)
-					}
-				}
-				if used, found := soldValues["VMEM_USED"]; found {
-					VMem = fmt.Sprintf("%.2f", used)
-					if capacity, found := soldValues["VMEM_CAPACITY"]; found {
-						VMem += fmt.Sprintf(" (%.2f%%)", used/capacity*100)
-					}
-				}
-				fmt.Printf(format_show_one_content_2,
-					name, VCPU, VMem)
+			var entities []*topology.Entity
+			for entity := range node.Members.Iterator().C {
+				entities = append(entities, entity.(*topology.Entity))
 			}
+			displayEntitiesInSupplyChainNode(entities, proto.EntityDTO_EntityType(node.EntityType))
 			fmt.Println()
 		}
 	}
+}
+
+func displayEntitiesInSupplyChainNode(
+	entities []*topology.Entity, entityType proto.EntityDTO_EntityType) {
+	headerValue2 := []interface{}{"NAME"}
+	displayFields := entitiesToTopCommoditiesMap[entityType]
+	i := 0
+	for _, displayField := range displayFields {
+		if i == 2 {
+			// Only display two metrics
+			break
+		}
+		headerValue2 = append(headerValue2, displayField.header)
+		i++
+	}
+	fmt.Printf(headerFormat2, headerValue2...)
+	for _, entity := range entities {
+		contentValue2 := []interface{}{utils.Truncate(entity.Name, 45)}
+		i = 0
+		for _, displayField := range displayFields {
+			if i == 2 {
+				break
+			}
+			value := "-"
+			if displayField.commType == soldType {
+				used := entity.CommoditySold[displayField.commName+"_USED"]
+				capacity := entity.CommoditySold[displayField.commName+"_CAPACITY"]
+				if used != nil && capacity != nil {
+					value = fmt.Sprintf("%.2f", used.Value)
+					if capacity.Value > 0 {
+						value += fmt.Sprintf(" (%.2f%%)", used.Value/capacity.Value*100)
+					}
+				}
+			} else {
+				usedValue := entity.AvgCommBoughtValue[displayField.commName+"_USED"]
+				value = fmt.Sprintf("%.2f", usedValue)
+			}
+			contentValue2 = append(contentValue2, value)
+			i++
+		}
+		fmt.Printf(contentFormat2, contentValue2...)
+	}
+}
+
+func displayEntities(entities []*topology.Entity, entityType proto.EntityDTO_EntityType) {
+	maxNameLen := getMaxNameLength(entities) + 2
+	headerFormat := fmt.Sprintf("%%-%ds", maxNameLen)
+	headerValue := []interface{}{"NAME"}
+	displayFields := entitiesToTopCommoditiesMap[entityType]
+	for _, displayField := range displayFields {
+		if displayField.commType == soldType {
+			headerFormat += "%-15s"
+		} else {
+			headerFormat += "%-10s"
+		}
+		headerValue = append(headerValue, displayField.header)
+	}
+	headerFormat += "\n"
+	fmt.Printf(headerFormat, headerValue...)
+	for _, entity := range entities {
+		contentFormat := fmt.Sprintf("%%-%ds", maxNameLen)
+		contentValue := []interface{}{entity.Name}
+		for _, displayField := range displayFields {
+			value := "-"
+			if displayField.commType == soldType {
+				contentFormat += "%-15s"
+				used := entity.CommoditySold[displayField.commName+"_USED"]
+				capacity := entity.CommoditySold[displayField.commName+"_CAPACITY"]
+				if used != nil && capacity != nil {
+					value = fmt.Sprintf("%.2f", used.Value)
+					if capacity.Value > 0 {
+						value += fmt.Sprintf(" (%.2f%%)", used.Value/capacity.Value*100)
+					}
+				}
+			} else {
+				contentFormat += "%-10s"
+				usedValue := entity.AvgCommBoughtValue[displayField.commName+"_USED"]
+				value = fmt.Sprintf("%.2f", usedValue)
+			}
+			contentValue = append(contentValue, value)
+		}
+		contentFormat += "\n"
+		fmt.Printf(contentFormat, contentValue...)
+	}
+}
+
+func getMaxNameLength(entities []*topology.Entity) int {
+	var maxLen int
+	for _, entity := range entities {
+		curLen := len(entity.Name)
+		if curLen > maxLen {
+			maxLen = curLen
+		}
+	}
+	return maxLen
 }

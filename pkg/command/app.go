@@ -5,17 +5,7 @@ import (
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"github.com/turbonomic/turbotower/pkg/influx"
 	"github.com/turbonomic/turbotower/pkg/topology"
-	"github.com/turbonomic/turbotower/utils"
 	"github.com/urfave/cli"
-)
-
-var (
-	format_list_all_header    = "%-60s%-10s%-15s%-10s%-10s\n"
-	format_list_all_content   = "%-60s%-10.2f%-15.2f%-10s%-10s\n"
-	format_show_one_header_1  = "%-25s%-25s%-30s%-30s\n"
-	format_show_one_content_1 = "%-25s%-25d%-30s%-30s\n"
-	format_show_one_header_2  = "%-50s%-30s%-30s\n"
-	format_show_one_content_2 = "%-50s%-30s%-30s\n"
 )
 
 func GetApplication(c *cli.Context) error {
@@ -52,14 +42,7 @@ func list(scope, name string, tp *topology.Topology) error {
 			entityType, _ := proto.EntityDTO_EntityType_name[int32(proto.EntityDTO_APPLICATION)]
 			return fmt.Errorf("failed to get entity by name %s and type %s", name, entityType)
 		}
-		fmt.Printf(format_list_all_header,
-			"Name", "VCPU", "VMEM", "QPS", "LATENCY")
-		avgValue := app.AvgCommBoughtValue
-		avgVCPU, _ := avgValue["VCPU_USED"]
-		avgVMem, _ := avgValue["VMEM_USED"]
-		fmt.Printf(format_list_all_content,
-			utils.Truncate(app.Name, 55),
-			avgVCPU, avgVMem, "-", "-")
+		displayEntities([]*topology.Entity{app}, proto.EntityDTO_APPLICATION)
 		return nil
 	}
 	containerPods := tp.GetContainerPodsInCluster(scope)
@@ -80,16 +63,7 @@ func list(scope, name string, tp *topology.Topology) error {
 				entities = append(entities, entity.(*topology.Entity))
 			}
 			sortedEntities := topology.SortEntities(entities)
-			fmt.Printf(format_list_all_header,
-				"Name", "VCPU", "VMEM", "QPS", "LATENCY")
-			for _, app := range sortedEntities {
-				avgValue := app.AvgCommBoughtValue
-				avgVCPU, _ := avgValue["VCPU_USED"]
-				avgVMem, _ := avgValue["VMEM_USED"]
-				fmt.Printf(format_list_all_content,
-					utils.Truncate(app.Name, 55),
-					avgVCPU, avgVMem, "-", "-")
-			}
+			displayEntities(sortedEntities, proto.EntityDTO_APPLICATION)
 		}
 	}
 	return nil
