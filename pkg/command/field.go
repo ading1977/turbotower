@@ -9,14 +9,14 @@ const (
 	soldType   commType = 1
 )
 
-type displayField struct {
+type display struct {
 	header   string
 	commName string
 	commType commType
 }
 
 var (
-	entitiesToTopCommoditiesMap = map[proto.EntityDTO_EntityType][]displayField{
+	entitiesToTopCommoditiesMap = map[proto.EntityDTO_EntityType][]display{
 		proto.EntityDTO_VIRTUAL_APPLICATION: {
 			{
 				header:   "QPS",

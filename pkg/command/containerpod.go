@@ -23,7 +23,6 @@ func GetContainerPod(c *cli.Context) error {
 	sortType := topology.SortTypeCommoditySold
 	if sortMetric == "VCPU" || sortMetric == "VMEM" {
 		sortMetric += "_USED"
-		sortType = topology.SortTypeCommodityBought
 	}
 	topology.SetEntityListSortStrategy(sortType, sortMetric)
 	// Display

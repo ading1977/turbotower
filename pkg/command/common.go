@@ -37,7 +37,8 @@ func displaySupplyChain(seeds []*topology.Entity, summary bool) {
 			for entity := range node.Members.Iterator().C {
 				entities = append(entities, entity.(*topology.Entity))
 			}
-			displayEntitiesInSupplyChainNode(entities, proto.EntityDTO_EntityType(node.EntityType))
+			sortedEntities := topology.SortEntities(entities)
+			displayEntitiesInSupplyChainNode(sortedEntities, proto.EntityDTO_EntityType(node.EntityType))
 			fmt.Println()
 		}
 	}

@@ -19,6 +19,11 @@ var (
 		Value: "VCPU",
 		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
 	}
+	flVirtualMachineSort = &cli.StringFlag{
+		Name: "sort, s",
+		Value: "VCPU",
+		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
+	}
 	flSupplyChain = &cli.BoolFlag{
 		Name: "supplychain, sc",
 		Usage: "Specify if a supply chain from this entity or group of entities should be displayed",
