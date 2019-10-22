@@ -24,19 +24,20 @@ func (t *Topology) createEntityIfAbsent(name string, oid int64, entityType int32
 		t.Entities[oid] = e
 	}
 	for _, group := range groups {
+//		log.Infof("Add %s to group %s", e.Name, group)
 		e.Groups.Add(group)
 	}
 	return e
 }
 
 func (t *Topology) getEntitiesInCluster(clusterName string, entityType int32) []*Entity {
-	//log.Infof("Get entities in cluster %v", clusterName)
+//	log.Infof("Get entities in cluster %v", clusterName)
 	var entities []*Entity
 	if entityList, found := t.EntityTypeIndex[entityType]; found {
 		for _, entity := range entityList {
-			//log.Infof("Checking %v %v", entity.Name, entity.Groups)
+//			log.Infof("Checking %v %v", entity.Name, entity.Groups)
 			if entity.Groups.Contains(clusterName) {
-				//log.Infof("Adding entity %v", entity.Name)
+//				log.Infof("Adding entity %v", entity.Name)
 				entities = append(entities, entity)
 			}
 		}
@@ -50,6 +51,10 @@ func (t *Topology) GetContainerPodsInCluster(clusterName string) []*Entity {
 
 func (t *Topology) GetVirtualMachinesInCluster(clusterName string) []*Entity {
 	return t.getEntitiesInCluster(clusterName, int32(proto.EntityDTO_VIRTUAL_MACHINE))
+}
+
+func (t *Topology) GetPhysicalMachinesInCluster(clusterName string) [] *Entity {
+	return t.getEntitiesInCluster(clusterName, int32(proto.EntityDTO_PHYSICAL_MACHINE))
 }
 
 func (t *Topology) GetEntityByNameAndType(name string, entityType int32) *Entity {

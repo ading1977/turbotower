@@ -61,7 +61,7 @@ func (t *TopologyBuilder) processCommoditySold(tp *Topology) error {
 		displayName := value[index+2].(string)
 		// Parse group names
 		var groupNames []string
-		for i := index+3; i < len(columns); i++ {
+		for i := index+3; i <= len(columns); i++ {
 			valObj := value[i]
 			if valObj != nil && valObj.(string) != "" {
 				groupNames = append(groupNames, valObj.(string))
@@ -121,7 +121,7 @@ func (t *TopologyBuilder) processCommodityBought(tp *Topology) error {
 		displayName := value[index+3].(string)
 		// Parse group names
 		var groupNames []string
-		for i := index+4; i < len(columns); i++ {
+		for i := index+4; i <= len(columns); i++ {
 			valObj := value[i]
 			if valObj != nil && valObj.(string) != "" {
 				groupNames = append(groupNames, valObj.(string))

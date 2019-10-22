@@ -121,7 +121,7 @@ func (db *DBInstance) Close() {
 func (db *DBInstance) Query(dbQuery *DBQuery) (*models.Row, error) {
 	queryString := dbQuery.build()
 	if log.GetLevel() >= log.DebugLevel {
-		log.Debugf("DB query string %s", queryString)
+		log.Infof("DB query string %s", queryString)
 	}
 	q := client.NewQuery(
 		queryString,

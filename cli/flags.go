@@ -19,6 +19,11 @@ var (
 		Value: "VCPU",
 		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
 	}
+	flPhysicalMachineSort = &cli.StringFlag{
+		Name: "sort, s",
+		Value: "CPU",
+		Usage: "Specify the `METRIC` to be used to sort the result in a descending order",
+	}
 	flVirtualMachineSort = &cli.StringFlag{
 		Name: "sort, s",
 		Value: "VCPU",

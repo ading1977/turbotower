@@ -20,11 +20,10 @@ var (
 					Flags:     []cli.Flag{flClusterName, flAppSort, flSupplyChain},
 					ArgsUsage: "[NAME]",
 				},
-
 				{
-					Name:      "cluster",
-					ShortName: "cl",
-					Usage:     "Display one or many clusters",
+					Name:      "vmcluster",
+					ShortName: "vmcl",
+					Usage:     "Display one or many virtual machine clusters",
 					Action:    command.GetVMCluster,
 					ArgsUsage: "[NAME]",
 				},
@@ -42,6 +41,21 @@ var (
 					Usage:     "Display one or many container pods",
 					Action:    command.GetContainerPod,
 					Flags:     []cli.Flag{flClusterName, flContainerSort, flSupplyChain},
+					ArgsUsage: "[NAME]",
+				},
+				{
+					Name:      "physicalmachine",
+					ShortName: "pm",
+					Usage:     "Display one or many physical machines that belong to a cluster",
+					Action:    command.GetPhysicalMachine,
+					Flags:     []cli.Flag{flClusterName, flPhysicalMachineSort, flSupplyChain},
+					ArgsUsage: "[NAME]",
+				},
+				{
+					Name:      "pmcluster",
+					ShortName: "pmcl",
+					Usage:     "Display one or many physical machine clusters",
+					Action:    command.GetPMCluster,
 					ArgsUsage: "[NAME]",
 				},
 				{
