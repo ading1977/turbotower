@@ -6,12 +6,23 @@ import (
 	"github.com/urfave/cli"
 )
 
-func GetVMCluster(c *cli.Context) error {
+func GetCluster(c *cli.Context) error {
+	clusterType := c.String("type")
+	if clusterType != "vm" && clusterType != "host" {
+		return fmt.Errorf("you must specify a valid cluster type (vm, host)")
+	}
 	db, err := influx.NewDBInstance(c)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
+	if clusterType == "vm" {
+		return GetVMCluster(c, db)
+	}
+	return GetHostCluster(c, db)
+}
+
+func GetVMCluster(c *cli.Context, db *influx.DBInstance) error {
 	row, err := db.Query(influx.NewDBQuery(c).
 		WithQueryType("schema").
 		WithColumns("VM_CLUSTER").
@@ -26,12 +37,7 @@ func GetVMCluster(c *cli.Context) error {
 	return nil
 }
 
-func GetPMCluster(c *cli.Context) error {
-	db, err := influx.NewDBInstance(c)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func GetHostCluster(c *cli.Context, db *influx.DBInstance) error {
 	row, err := db.Query(influx.NewDBQuery(c).
 		WithQueryType("schema").
 		WithColumns("HOST_CLUSTER").
